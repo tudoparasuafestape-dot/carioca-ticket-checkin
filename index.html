@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#111111">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Carioca Ticket — Check-in</title>
+
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon-192.png">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <link rel="stylesheet" href="styles.css">
+
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+</head>
+<body>
+  <main class="app">
+    <header class="topo">
+      <div>
+        <p class="marca">🎟 CARIOCA TICKET</p>
+        <h1>Check-in do Evento</h1>
+      </div>
+      <button id="btnConfig" class="icone-btn" type="button" aria-label="Configurações">⚙️</button>
+    </header>
+
+    <section id="avisoConfig" class="aviso-config oculto">
+      <strong>Configuração necessária</strong>
+      <p>Cole a URL do aplicativo da web do Apps Script para conectar o leitor à planilha.</p>
+      <button id="btnAbrirConfig" class="btn btn-dourado" type="button">Configurar agora</button>
+    </section>
+
+    <section class="card scanner-card">
+      <div class="card-titulo">
+        <h2>📷 Leitor de QR Code</h2>
+        <span id="statusConexao" class="badge badge-off">Desconectado</span>
+      </div>
+
+      <div id="reader" class="reader"></div>
+
+      <button id="btnIniciar" class="btn btn-verde" type="button">Iniciar câmera</button>
+      <button id="btnParar" class="btn btn-vermelho oculto" type="button">Parar câmera</button>
+
+      <p id="statusCamera" class="texto-auxiliar">
+        Toque em “Iniciar câmera” e permita o acesso.
+      </p>
+
+      <div id="resultado" class="resultado oculto" aria-live="assertive">
+        <div id="resultadoIcone" class="resultado-icone"></div>
+        <h2 id="resultadoTitulo"></h2>
+        <p id="resultadoMensagem"></p>
+        <div id="resultadoDados" class="resultado-dados"></div>
+      </div>
+
+      <div class="divisor"><span>OU DIGITE O CÓDIGO</span></div>
+
+      <input
+        id="codigoManual"
+        class="campo"
+        type="text"
+        placeholder="Ex.: CT-20260805-3"
+        autocomplete="off"
+        autocapitalize="characters"
+      >
+
+      <button id="btnValidar" class="btn btn-preto" type="button">Validar código</button>
+    </section>
+
+    <footer>
+      <span id="versao">Carioca Ticket Check-in v1.0.0</span>
+    </footer>
+  </main>
+
+  <dialog id="modalConfig">
+    <form method="dialog" class="modal-conteudo">
+      <div class="modal-topo">
+        <h2>⚙️ Configuração</h2>
+        <button class="icone-btn" value="cancel" aria-label="Fechar">✕</button>
+      </div>
+
+      <label for="apiUrl">URL do Apps Script</label>
+      <input
+        id="apiUrl"
+        class="campo"
+        type="url"
+        placeholder="https://script.google.com/macros/s/.../exec"
+      >
+
+      <p class="texto-auxiliar">
+        Cole a URL terminada em <strong>/exec</strong>. Ela será salva apenas neste aparelho.
+      </p>
+
+      <button id="btnSalvarConfig" class="btn btn-dourado" type="button">Salvar configuração</button>
+      <button id="btnTestarConexao" class="btn btn-preto" type="button">Testar conexão</button>
+
+      <p id="mensagemConfig" class="mensagem-config"></p>
+    </form>
+  </dialog>
+
+  <script src="app.js"></script>
+</body>
+</html>
