@@ -1,42 +1,5 @@
-const CACHE = 'carioca-ticket-checkin-v1';
-const ARQUIVOS = [
-  './',
-  './index.html',
-  './styles.css',
-  './app.js',
-  './manifest.webmanifest',
-  './icon-192.png',
-  './icon-512.png'
-];
-
-self.addEventListener('install', (evento) => {
-  evento.waitUntil(
-    caches.open(CACHE).then((cache) => cache.addAll(ARQUIVOS))
-  );
-  self.skipWaiting();
-});
-
-self.addEventListener('activate', (evento) => {
-  evento.waitUntil(
-    caches.keys().then((chaves) =>
-      Promise.all(
-        chaves
-          .filter((chave) => chave !== CACHE)
-          .map((chave) => caches.delete(chave))
-      )
-    )
-  );
-  self.clients.claim();
-});
-
-self.addEventListener('fetch', (evento) => {
-  evento.respondWith(
-    fetch(evento.request)
-      .then((resposta) => {
-        const copia = resposta.clone();
-        caches.open(CACHE).then((cache) => cache.put(evento.request, copia));
-        return resposta;
-      })
-      .catch(() => caches.match(evento.request))
-  );
-});
+const CACHE='carioca-ticket-v3';
+const FILES=['./','./index.html','./app.js','./styles.css','./painel.html','./painel.css','./painel.js','./manifest-painel.json','./icon-192.png','./icon-512.png'];
+self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>Promise.all(FILES.map(f=>c.add(f).catch(()=>null)))));self.skipWaiting()});
+self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(x=>x!==CACHE).map(x=>caches.delete(x)))));self.clients.claim()});
+self.addEventListener('fetch',e=>{if(e.request.method!=='GET')return;const u=new URL(e.request.url);if(u.hostname.includes('script.google.com')||u.hostname.includes('googleusercontent.com'))return;e.respondWith(fetch(e.request).then(r=>{const c=r.clone();caches.open(CACHE).then(x=>x.put(e.request,c));return r}).catch(()=>caches.match(e.request).then(r=>r||(e.request.mode==='navigate'?caches.match('./painel.html'):Response.error()))))});
