@@ -1,10 +1,642 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <title>Painel do Produtor</title>
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1, viewport-fit=cover"
+  >
+
+  <meta
+    name="theme-color"
+    content="#111111"
+  >
+
+  <title>Carioca Ticket — Painel do Produtor</title>
+
+  <link
+    rel="icon"
+    type="image/png"
+    href="icon-192.png"
+  >
+
+  <link
+    rel="stylesheet"
+    href="painel.css"
+  >
 </head>
+
 <body>
-    Painel do Produtor
+  <main class="app">
+
+    <div class="container">
+
+      <header class="topo">
+
+        <div class="topo-conteudo">
+
+          <p class="marca">
+            🎟 CARIOCA TICKET
+          </p>
+
+          <h1>
+            📡 Painel do Produtor
+          </h1>
+
+          <p class="subtitulo">
+            Acompanhe o evento em tempo real
+          </p>
+
+          <div class="indicador-ao-vivo">
+            <span class="ponto-ao-vivo"></span>
+            Atualização ao vivo
+          </div>
+
+        </div>
+
+        <div class="topo-acoes">
+
+          <button
+            id="botaoTelaCheia"
+            class="botao-icone"
+            type="button"
+            title="Tela cheia"
+          >
+            ⛶
+          </button>
+
+          <button
+            id="botaoAtualizar"
+            class="botao-icone"
+            type="button"
+            title="Atualizar agora"
+          >
+            🔄
+          </button>
+
+          <button
+            id="botaoConfiguracao"
+            class="botao-icone"
+            type="button"
+            title="Configurar API"
+          >
+            ⚙️
+          </button>
+
+        </div>
+
+      </header>
+
+
+      <section
+        id="estadoCarregando"
+        class="estado estado-carregando"
+      >
+        Carregando informações do evento...
+      </section>
+
+
+      <section
+        id="estadoErro"
+        class="estado estado-erro oculto"
+      >
+      </section>
+
+
+      <div
+        id="conteudoPainel"
+        class="oculto"
+      >
+
+        <section class="evento-card">
+
+          <div>
+
+            <h2 id="eventoNome">
+              Evento
+            </h2>
+
+            <div class="evento-detalhes">
+
+              <span id="eventoData">
+                📅 —
+              </span>
+
+              <span id="eventoHorario">
+                🕒 —
+              </span>
+
+              <span id="eventoLocal">
+                📍 —
+              </span>
+
+            </div>
+
+          </div>
+
+          <div class="ultima-atualizacao">
+
+            <span>
+              Última atualização
+            </span>
+
+            <strong id="textoAtualizacao">
+              —
+            </strong>
+
+          </div>
+
+        </section>
+
+
+        <section class="grade-resumo">
+
+          <article class="resumo-card resumo-presentes">
+
+            <span>
+              Presentes agora
+            </span>
+
+            <strong id="resumoPresentes">
+              0
+            </strong>
+
+            <small>
+              Check-ins realizados
+            </small>
+
+          </article>
+
+
+          <article class="resumo-card resumo-pendentes">
+
+            <span>
+              Pendentes
+            </span>
+
+            <strong id="resumoPendentes">
+              0
+            </strong>
+
+            <small>
+              Aguardando entrada
+            </small>
+
+          </article>
+
+
+          <article class="resumo-card resumo-receita">
+
+            <span>
+              Receita total
+            </span>
+
+            <strong id="resumoReceita">
+              R$ 0,00
+            </strong>
+
+            <small id="resumoPagos">
+              0 ingressos pagos
+            </small>
+
+          </article>
+
+
+          <article class="resumo-card resumo-validos">
+
+            <span>
+              Ingressos válidos
+            </span>
+
+            <strong id="resumoValidos">
+              0
+            </strong>
+
+            <small id="resumoEmitidos">
+              0 ingressos emitidos
+            </small>
+
+          </article>
+
+
+          <article class="resumo-card resumo-vagas">
+
+            <span>
+              Vagas restantes
+            </span>
+
+            <strong id="resumoVagas">
+              —
+            </strong>
+
+            <small id="resumoCapacidade">
+              Capacidade não configurada
+            </small>
+
+          </article>
+
+
+          <article class="resumo-card resumo-ticket">
+
+            <span>
+              Ticket médio
+            </span>
+
+            <strong id="resumoTicketMedio">
+              R$ 0,00
+            </strong>
+
+            <small id="resumoCortesias">
+              0 cortesias
+            </small>
+
+          </article>
+
+
+          <article class="resumo-card resumo-cancelados">
+
+            <span>
+              Cancelados
+            </span>
+
+            <strong id="resumoCancelados">
+              0
+            </strong>
+
+            <small>
+              Fora da ocupação
+            </small>
+
+          </article>
+
+        </section>
+
+
+        <section class="grade-principal">
+
+          <article class="card">
+
+            <div class="card-cabecalho">
+
+              <h3>
+                ✅ Último check-in
+              </h3>
+
+              <span>
+                Entrada mais recente
+              </span>
+
+            </div>
+
+
+            <div
+              id="ultimoCheckin"
+              class="ultimo-checkin vazio"
+            >
+
+              <div class="ultimo-icone">
+                —
+              </div>
+
+              <h2 id="ultimoNome">
+                Nenhum check-in
+              </h2>
+
+              <p id="ultimoMensagem">
+                As entradas aparecerão aqui em tempo real.
+              </p>
+
+
+              <div class="ultimo-dados">
+
+                <div class="ultimo-dado">
+
+                  <strong>
+                    Ingresso
+                  </strong>
+
+                  <span id="ultimoTipo">
+                    —
+                  </span>
+
+                </div>
+
+
+                <div class="ultimo-dado">
+
+                  <strong>
+                    Horário
+                  </strong>
+
+                  <span id="ultimoHorario">
+                    —
+                  </span>
+
+                </div>
+
+
+                <div class="ultimo-dado">
+
+                  <strong>
+                    Código
+                  </strong>
+
+                  <span id="ultimoCodigo">
+                    —
+                  </span>
+
+                </div>
+
+
+                <div class="ultimo-dado">
+
+                  <strong>
+                    Há quanto tempo
+                  </strong>
+
+                  <span id="ultimoTempo">
+                    —
+                  </span>
+
+                </div>
+
+              </div>
+
+            </div>
+
+          </article>
+
+
+          <article class="card">
+
+            <div class="card-cabecalho">
+
+              <h3>
+                🕒 Check-ins recentes
+              </h3>
+
+              <span>
+                Últimas entradas
+              </span>
+
+            </div>
+
+
+            <div
+              id="listaCheckins"
+              class="lista-checkins"
+            >
+
+              <div class="sem-dados">
+                Nenhum check-in registrado.
+              </div>
+
+            </div>
+
+          </article>
+
+        </section>
+
+
+        <section class="card">
+
+          <div class="card-cabecalho">
+
+            <h3>
+              📊 Ocupação e comparecimento
+            </h3>
+
+            <span>
+              Dados atualizados automaticamente
+            </span>
+
+          </div>
+
+
+          <div class="barra-area">
+
+            <div class="barra-topo">
+
+              <span>
+                Ocupação do evento
+              </span>
+
+              <strong id="percentualOcupacao">
+                0%
+              </strong>
+
+            </div>
+
+
+            <div class="barra-fundo">
+
+              <div
+                id="barraOcupacao"
+                class="barra-preenchimento barra-ocupacao"
+              >
+              </div>
+
+            </div>
+
+
+            <div class="barra-rodape">
+
+              <span id="textoOcupacao">
+                0 ingressos válidos
+              </span>
+
+              <span id="textoVagas">
+                — vagas restantes
+              </span>
+
+            </div>
+
+          </div>
+
+
+          <div class="barra-area">
+
+            <div class="barra-topo">
+
+              <span>
+                Check-ins realizados
+              </span>
+
+              <strong id="percentualCheckin">
+                0%
+              </strong>
+
+            </div>
+
+
+            <div class="barra-fundo">
+
+              <div
+                id="barraCheckin"
+                class="barra-preenchimento barra-checkin"
+              >
+              </div>
+
+            </div>
+
+
+            <div class="barra-rodape">
+
+              <span id="textoCheckin">
+                0 de 0 ingressos válidos
+              </span>
+
+              <span>
+                Taxa de comparecimento
+              </span>
+
+            </div>
+
+          </div>
+
+        </section>
+
+
+        <section class="card">
+
+          <div class="card-cabecalho">
+
+            <h3>
+              📈 Entradas por horário
+            </h3>
+
+            <span>
+              Fluxo de check-ins
+            </span>
+
+          </div>
+
+
+          <div
+            id="graficoCheckins"
+            class="grafico"
+          >
+          </div>
+
+
+          <div
+            id="semGrafico"
+            class="sem-dados oculto"
+          >
+            Nenhum check-in disponível para montar o gráfico.
+          </div>
+
+        </section>
+
+      </div>
+
+
+      <footer class="rodape">
+
+        <span>
+          Carioca Ticket — Painel do Produtor
+        </span>
+
+        <span id="versaoPainel">
+          v1.0.0
+        </span>
+
+      </footer>
+
+    </div>
+
+  </main>
+
+
+  <dialog id="modalConfiguracao">
+
+    <form
+      method="dialog"
+      class="modal"
+    >
+
+      <header class="modal-topo">
+
+        <div>
+
+          <p class="modal-marca">
+            CARIOCA TICKET
+          </p>
+
+          <h2>
+            ⚙️ Configuração
+          </h2>
+
+        </div>
+
+        <button
+          class="modal-fechar"
+          value="cancel"
+          type="submit"
+        >
+          ✕
+        </button>
+
+      </header>
+
+
+      <div class="modal-corpo">
+
+        <label
+          class="campo-label"
+          for="campoUrlApi"
+        >
+          URL da API do Apps Script
+        </label>
+
+        <input
+          id="campoUrlApi"
+          class="campo"
+          type="url"
+          placeholder="https://script.google.com/macros/s/.../exec"
+          autocomplete="off"
+        >
+
+
+        <p class="ajuda">
+          Cole a mesma URL terminada em
+          <strong>/exec</strong>
+          usada no aplicativo de check-in.
+        </p>
+
+
+        <button
+          id="botaoTestarApi"
+          class="botao botao-secundario"
+          type="button"
+        >
+          🔌 Testar conexão
+        </button>
+
+
+        <button
+          id="botaoSalvarApi"
+          class="botao botao-principal"
+          type="button"
+        >
+          💾 Salvar configuração
+        </button>
+
+
+        <p
+          id="mensagemConfiguracao"
+          class="mensagem-configuracao"
+        >
+        </p>
+
+      </div>
+
+    </form>
+
+  </dialog>
+
+
+  <script src="painel.js"></script>
 </body>
 </html>
