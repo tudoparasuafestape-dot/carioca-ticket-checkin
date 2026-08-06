@@ -14,6 +14,7 @@ let ultimoCodigo = '';
 let ultimoCodigoEm = 0;
 let temporizadorTela = null;
 let temporizadorContagem = null;
+let eventoInstalacao = null;
 
 const el = function(id) {
   return document.getElementById(id);
@@ -50,6 +51,11 @@ function registrarEventos() {
   el('btnConfig').addEventListener(
     'click',
     abrirConfiguracao
+  );
+
+  el('btnInstalar').addEventListener(
+    'click',
+    instalarAplicativo
   );
 
   el('btnAbrirConfig').addEventListener(
@@ -1334,6 +1340,80 @@ function escaparHtml(
     );
 }
 
+
+
+/*
+  INSTALAÇÃO DO PWA
+*/
+
+window.addEventListener(
+  'beforeinstallprompt',
+  function(evento) {
+    evento.preventDefault();
+
+    eventoInstalacao =
+      evento;
+
+    const botao =
+      document.getElementById(
+        'btnInstalar'
+      );
+
+    if (botao) {
+      botao.classList.remove(
+        'oculto'
+      );
+    }
+  }
+);
+
+
+window.addEventListener(
+  'appinstalled',
+  function() {
+    eventoInstalacao =
+      null;
+
+    const botao =
+      document.getElementById(
+        'btnInstalar'
+      );
+
+    if (botao) {
+      botao.classList.add(
+        'oculto'
+      );
+    }
+  }
+);
+
+
+async function instalarAplicativo() {
+  if (!eventoInstalacao) {
+    return;
+  }
+
+  eventoInstalacao.prompt();
+
+  try {
+    await eventoInstalacao
+      .userChoice;
+  } finally {
+    eventoInstalacao =
+      null;
+
+    const botao =
+      document.getElementById(
+        'btnInstalar'
+      );
+
+    if (botao) {
+      botao.classList.add(
+        'oculto'
+      );
+    }
+  }
+}
 
 function registrarServiceWorker() {
   if (
