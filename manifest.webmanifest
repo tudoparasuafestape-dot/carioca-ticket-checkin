@@ -1,21 +1,26 @@
 {
-  "name": "Carioca Ticket Check-in",
+  "name": "Carioca Ticket - Check-in",
   "short_name": "Carioca Check-in",
-  "start_url": "./",
+  "description": "Leitor de QR Code e aplicativo de check-in do Carioca Ticket.",
+  "start_url": "./index.html",
+  "scope": "./",
   "display": "standalone",
+  "orientation": "portrait-primary",
   "background_color": "#f2f2f2",
   "theme_color": "#111111",
-  "description": "Leitor de QR Code e check-in do Carioca Ticket.",
+  "lang": "pt-BR",
   "icons": [
     {
       "src": "icon-192.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     },
     {
       "src": "icon-512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ]
 }
