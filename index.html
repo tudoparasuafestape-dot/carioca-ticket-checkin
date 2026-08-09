@@ -287,6 +287,12 @@
         Toque em “Iniciar câmera” e permita o acesso.
       </div>
 
+      <div id="diagnostico" style="margin-top:14px;padding:14px;border-radius:16px;background:#eef2f7;color:#263238;font-size:14px;line-height:1.45;">
+        <strong style="display:block;margin-bottom:6px;">Diagnóstico do leitor</strong>
+        <div id="diagStatus">Aguardando leitura do QR Code.</div>
+        <div id="diagConteudo" style="margin-top:6px;word-break:break-all;color:#5f6368;"></div>
+      </div>
+
       <div id="resultado" class="resultado" aria-live="polite"></div>
 
       <div class="divisor">OU DIGITE O CÓDIGO</div>
@@ -306,7 +312,7 @@
     </section>
 
     <footer>
-      CARIOCA TICKET · CHECK-IN v2.0.0
+      CARIOCA TICKET · CHECK-IN DIAGNÓSTICO v2.0.1
     </footer>
   </main>
 
@@ -322,6 +328,8 @@
     const codigoManual = document.getElementById('codigoManual');
     const resultado = document.getElementById('resultado');
     const ajudaCamera = document.getElementById('ajudaCamera');
+    const diagStatus = document.getElementById('diagStatus');
+    const diagConteudo = document.getElementById('diagConteudo');
 
     function normalizarCodigo(valor) {
       return String(valor || '').trim().toUpperCase();
@@ -458,10 +466,18 @@
           function(decodedText) {
             if (processando) return;
 
-            const codigo = normalizarCodigo(decodedText);
+            const conteudoBruto = String(decodedText || '').trim();
+
+            diagStatus.textContent = 'QR Code detectado pela câmera.';
+            diagConteudo.textContent = 'Conteúdo lido: ' + conteudoBruto;
+
+            const codigo = normalizarCodigo(conteudoBruto);
 
             codigoManual.value = codigo;
-            validarCodigo(codigo);
+
+            setTimeout(function(){
+              validarCodigo(codigo);
+            }, 350);
           },
           function() {}
         );
