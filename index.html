@@ -1,4 +1,5 @@
 
+
 <!doctype html>
 <html lang="pt-BR">
 <head>
@@ -53,6 +54,10 @@
       font-weight:800;
       font-size:14px;
       border:1px solid #e2e2e5;
+      position:sticky;
+      top:8px;
+      z-index:100001;
+      box-shadow:0 4px 14px rgba(0,0,0,.12);
     }
 
     .topo {
@@ -250,7 +255,7 @@
     /* Resultado operacional sempre visível, sem rolagem */
     .resultado.fixo {
       position:fixed;
-      top:12px;
+      top:64px;
       left:50%;
       transform:translateX(-50%);
       width:min(calc(100% - 24px),720px);
@@ -259,12 +264,45 @@
       box-shadow:0 12px 36px rgba(0,0,0,.28);
       border-width:3px;
       font-size:17px;
+      padding-right:54px;
     }
 
     .resultado.fixo strong {
       font-size:26px;
       line-height:1.05;
       text-transform:uppercase;
+    }
+
+    .resultado-fechar {
+      position:absolute;
+      top:10px;
+      right:10px;
+      width:38px;
+      height:38px;
+      border:0;
+      border-radius:50%;
+      background:rgba(255,255,255,.76);
+      color:currentColor;
+      font-size:27px;
+      line-height:1;
+      font-weight:800;
+      cursor:pointer;
+      display:grid;
+      place-items:center;
+      box-shadow:0 2px 8px rgba(0,0,0,.12);
+    }
+
+    .resultado-fechar:active {
+      transform:scale(.94);
+    }
+
+    @media (max-width:520px) {
+      .resultado.fixo {
+        top:68px;
+        width:calc(100% - 24px);
+        max-height:calc(100dvh - 88px);
+        overflow:auto;
+      }
     }
 
     .evento-operacao {
@@ -362,7 +400,7 @@
     </section>
 
     <footer>
-      CARIOCA TICKET · CHECK-IN MULTIEVENTO v2.1.4
+      CARIOCA TICKET · CHECK-IN MULTIEVENTO v2.1.5
     </footer>
   </main>
 
@@ -416,9 +454,15 @@
 
       resultado.className = 'resultado ' + classe + ' fixo';
       resultado.innerHTML =
+        '<button type="button" class="resultado-fechar" aria-label="Fechar aviso" onclick="fecharResultado()">×</button>' +
         '<strong>' + escapar(titulo) + '</strong>' +
         '<div>' + escapar((dados && dados.mensagem) || 'Não foi possível validar.') + '</div>' +
         (detalhes.length ? '<div style="margin-top:8px">' + detalhes.join('<br>') + '</div>' : '');
+    }
+
+    function fecharResultado() {
+      resultado.className = 'resultado';
+      resultado.innerHTML = '';
     }
 
     function escapar(valor) {
@@ -513,8 +557,7 @@
         return;
       }
 
-      resultado.className = 'resultado';
-      resultado.innerHTML = '';
+      fecharResultado();
 
       if (typeof Html5Qrcode === 'undefined') {
         mostrarResultado({
@@ -589,6 +632,7 @@
       btnCamera.classList.remove('btn-vermelho');
       btnCamera.classList.add('btn-verde');
       ajudaCamera.textContent = 'Toque em “Iniciar câmera” e permita o acesso.';
+      fecharResultado();
     }
 
     btnCamera.addEventListener('click', iniciarCamera);
