@@ -238,6 +238,41 @@
       margin-bottom:6px;
     }
 
+    /* Resultado operacional sempre visível, sem rolagem */
+    .resultado.fixo {
+      position:fixed;
+      top:12px;
+      left:50%;
+      transform:translateX(-50%);
+      width:min(calc(100% - 24px),720px);
+      z-index:99999;
+      margin:0;
+      box-shadow:0 12px 36px rgba(0,0,0,.28);
+      border-width:3px;
+      font-size:17px;
+    }
+
+    .resultado.fixo strong {
+      font-size:26px;
+      line-height:1.05;
+      text-transform:uppercase;
+    }
+
+    .evento-operacao {
+      margin:0 0 14px;
+      padding:10px 12px;
+      border-radius:14px;
+      background:#1d1d1f;
+      color:#fff;
+      border:1px solid #765b16;
+      font-size:14px;
+      text-align:center;
+    }
+
+    .evento-operacao b {
+      color:#e9aa17;
+    }
+
     footer {
       text-align:center;
       color:#9a9aa0;
@@ -257,7 +292,7 @@
 </head>
 <body>
   <main class="wrap">
-    <a class="voltar" href="https://script.google.com/macros/s/AKfycbxzpg1Rm876lmZygLqP-HEbHWc49ct0bicDKhOafywr9gHVG571uicgHJ3ZGWXsH2LZ/exec?page=app">
+    <a class="voltar" href="#" id="voltarCentral">
       ← Voltar para a Central
     </a>
 
@@ -271,6 +306,11 @@
       </div>
       <div class="config" aria-label="Sistema configurado">⚙️</div>
     </header>
+
+    <div id="eventoOperacao" class="evento-operacao">
+      <b>Evento para operar:</b>
+      <span id="eventoNome">carregando...</span>
+    </div>
 
     <section class="card">
       <div class="linha-titulo">
@@ -313,7 +353,7 @@
     </section>
 
     <footer>
-      CARIOCA TICKET · CHECK-IN DIAGNÓSTICO v2.0.1
+      CARIOCA TICKET · CHECK-IN MULTIEVENTO v2.1.0
     </footer>
   </main>
 
@@ -331,6 +371,15 @@
     const ajudaCamera = document.getElementById('ajudaCamera');
     const diagStatus = document.getElementById('diagStatus');
     const diagConteudo = document.getElementById('diagConteudo');
+    const eventoNomeEl = document.getElementById('eventoNome');
+
+    const parametrosUrl = new URLSearchParams(window.location.search);
+    const eventoId = String(parametrosUrl.get('evento') || '').trim();
+    const eventoNome = String(parametrosUrl.get('eventoNome') || 'Evento selecionado').trim();
+
+    if (eventoNomeEl) {
+      eventoNomeEl.textContent = eventoNome;
+    }
 
     function normalizarCodigo(valor) {
       return String(valor || '').trim().toUpperCase();
@@ -341,9 +390,13 @@
       const classe = tipo === 'sucesso' ? 'ok' : (tipo === 'aviso' ? 'aviso' : 'erro');
 
       const titulo =
-        tipo === 'sucesso'
-          ? 'Entrada liberada'
-          : (tipo === 'aviso' ? 'Atenção' : 'Entrada recusada');
+        dados && dados.titulo
+          ? String(dados.titulo)
+          : (
+              tipo === 'sucesso'
+                ? 'Entrada liberada'
+                : (tipo === 'aviso' ? 'Atenção' : 'Entrada recusada')
+            );
 
       const detalhes = [];
 
@@ -352,7 +405,7 @@
       if (dados && dados.codigo) detalhes.push('<b>Código:</b> ' + escapar(dados.codigo));
       if (dados && dados.horario) detalhes.push('<b>Horário:</b> ' + escapar(dados.horario));
 
-      resultado.className = 'resultado ' + classe;
+      resultado.className = 'resultado ' + classe + ' fixo';
       resultado.innerHTML =
         '<strong>' + escapar(titulo) + '</strong>' +
         '<div>' + escapar((dados && dados.mensagem) || 'Não foi possível validar.') + '</div>' +
@@ -370,6 +423,16 @@
 
     function validarCodigo(codigo) {
       codigo = normalizarCodigo(codigo);
+
+      if (!eventoId) {
+        mostrarResultado({
+          tipo:'erro',
+          titulo:'EVENTO NÃO INFORMADO',
+          mensagem:'Abra o Check-in pela Central do Carioca Ticket e selecione o evento antes de operar.',
+          codigo:codigo
+        });
+        return;
+      }
 
       if (!codigo || processando) {
         if (!codigo) {
@@ -428,6 +491,7 @@
         API_URL +
         '?action=checkin' +
         '&codigo=' + encodeURIComponent(codigo) +
+        '&evento=' + encodeURIComponent(eventoId) +
         '&callback=' + encodeURIComponent(callbackName) +
         '&_=' + Date.now();
 
@@ -529,6 +593,17 @@
         validarCodigo(codigoManual.value);
       }
     });
+
+    const voltarCentral = document.getElementById('voltarCentral');
+    if (voltarCentral) {
+      voltarCentral.addEventListener('click', function(evento) {
+        evento.preventDefault();
+        window.location.href =
+          API_URL +
+          '?page=app&evento=' +
+          encodeURIComponent(eventoId || '');
+      });
+    }
 
     window.addEventListener('pagehide', function() {
       if (cameraAtiva && scanner) {
