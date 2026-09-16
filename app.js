@@ -1,6 +1,7 @@
 const CONFIG = {
   STORAGE_API_URL: 'carioca_ticket_api_url',
-  VERSAO: '1.1.0',
+  VERSAO: '1.2.0',
+  PREFIXO_VALIDACAO_SEM_ENTRADA: 'CT_VALIDAR_SEM_ENTRADA:',
   TEMPO_BLOQUEIO_LEITURA_MS: 2600,
   TEMPO_TELA_SUCESSO_MS: 4000,
   TEMPO_TELA_AVISO_MS: 5000,
@@ -173,6 +174,20 @@ function obterApiUrl() {
     localStorage.getItem(
       CONFIG.STORAGE_API_URL
     ) || ''
+  ).trim();
+}
+
+
+function obterEventoIdContextoCheckin() {
+  const parametros =
+    new URLSearchParams(
+      window.location.search || ''
+    );
+
+  return String(
+    parametros.get('evento') ||
+    parametros.get('eventoId') ||
+    ''
   ).trim();
 }
 
@@ -567,6 +582,21 @@ async function validarIngresso(
     return;
   }
 
+  const eventoId =
+    obterEventoIdContextoCheckin();
+
+  if (!eventoId) {
+    mostrarTelaResultado({
+      tipo: 'erro',
+      titulo: 'Evento nao informado',
+      mensagem:
+        'Abra o check-in a partir do evento correto na Carioca Ticket.',
+      codigo: codigo
+    });
+
+    return;
+  }
+
   processando = true;
 
   el('btnValidar').disabled =
@@ -585,14 +615,44 @@ async function validarIngresso(
   });
 
   try {
-    const resposta =
+    let resposta =
       await chamarApiJsonp(
         apiUrl,
         {
           action: 'checkin',
-          codigo: codigo
+          codigo:
+            CONFIG.PREFIXO_VALIDACAO_SEM_ENTRADA +
+            codigo,
+          evento: eventoId
         }
       );
+
+    if (
+      resposta &&
+      resposta.sucesso === true &&
+      resposta.podeConfirmarEntrada === true
+    ) {
+      const confirmarEntrada =
+        window.confirm(
+          'INGRESSO VALIDO\n\n' +
+          (resposta.nome ? 'Participante: ' + resposta.nome + '\n' : '') +
+          (resposta.tipoIngresso ? 'Ingresso: ' + resposta.tipoIngresso + '\n' : '') +
+          '\nA entrada AINDA NAO foi registrada.\n\n' +
+          'Deseja CONFIRMAR A ENTRADA agora?'
+        );
+
+      if (confirmarEntrada === true) {
+        resposta =
+          await chamarApiJsonp(
+            apiUrl,
+            {
+              action: 'checkin',
+              codigo: codigo,
+              evento: eventoId
+            }
+          );
+      }
+    }
 
     const tipo =
       resposta.tipo ||
@@ -606,13 +666,16 @@ async function validarIngresso(
       tipo: tipo,
 
       titulo:
-        tipo === 'sucesso'
-          ? 'Entrada liberada'
-          : (
-              tipo === 'aviso'
-                ? 'Ingresso já utilizado'
-                : 'Entrada recusada'
-            ),
+        resposta.titulo ||
+        (
+          tipo === 'sucesso'
+            ? 'Entrada liberada'
+            : (
+                tipo === 'aviso'
+                  ? 'Ingresso ja utilizado'
+                  : 'Entrada recusada'
+              )
+        ),
 
       mensagem:
         resposta.mensagem ||
