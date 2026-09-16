@@ -498,6 +498,10 @@
         return;
       }
 
+      executarCheckinSeguro(codigo, true);
+    }
+
+    function executarCheckinSeguro(codigo, somenteValidar) {
       processando = true;
       btnValidar.disabled = true;
 
@@ -519,6 +523,35 @@
 
       window[callbackName] = function(dados) {
         limpar();
+
+        if (somenteValidar) {
+          if (!dados || dados.sucesso !== true) {
+            mostrarResultado(dados || {
+              tipo:'erro',
+              mensagem:'Resposta inválida do sistema.',
+              codigo:codigo
+            });
+            return;
+          }
+
+          const confirmar = window.confirm(
+            'INGRESSO VÁLIDO\n\nConfirmar a entrada deste ingresso agora?\n\nSomente ao clicar em OK a entrada será registrada.'
+          );
+
+          if (!confirmar) {
+            mostrarResultado({
+              tipo:'erro',
+              titulo:'ENTRADA NÃO CONFIRMADA',
+              mensagem:'Nenhuma entrada foi registrada. O ingresso continua disponível para uso.',
+              codigo:codigo
+            });
+            return;
+          }
+
+          executarCheckinSeguro(codigo, false);
+          return;
+        }
+
         mostrarResultado(dados || {
           tipo:'erro',
           mensagem:'Resposta inválida do sistema.',
@@ -540,10 +573,14 @@
         });
       };
 
+      const codigoEnviado = somenteValidar
+        ? 'CT_VALIDAR_SEM_ENTRADA:' + codigo
+        : codigo;
+
       script.src =
         API_URL +
         '?action=checkin' +
-        '&codigo=' + encodeURIComponent(codigo) +
+        '&codigo=' + encodeURIComponent(codigoEnviado) +
         '&evento=' + encodeURIComponent(eventoId) +
         '&callback=' + encodeURIComponent(callbackName) +
         '&_=' + Date.now();
