@@ -721,7 +721,8 @@ html.ct-operacao-bloqueada body {
       if (el) el.textContent = ctTexto_(valor, '—');
     }
 
-    function ctPrepararDetalhes_(dados, codigo) {
+    // CT_CHECKIN_HORARIO_CONTEXTUAL_V1_3_1
+    function ctPrepararDetalhes_(dados, codigo, mostrarHorario) {
       dados = dados || {};
       ctSetTexto_('ctGateEvento', eventoNome || 'Check-in');
       ctSetTexto_('ctGateNome', dados.nome || '—');
@@ -730,8 +731,9 @@ html.ct-operacao-bloqueada body {
 
       const horario = ctTexto_(dados.horario, '');
       const rowHorario = document.getElementById('ctGateRowHorario');
-      if (rowHorario) rowHorario.hidden = !horario;
-      if (horario) ctSetTexto_('ctGateHorario', horario);
+      const deveMostrarHorario = mostrarHorario === true && !!horario;
+      if (rowHorario) rowHorario.hidden = !deveMostrarHorario;
+      ctSetTexto_('ctGateHorario', deveMostrarHorario ? horario : '—');
     }
 
     function ctExibirTela_(config) {
@@ -749,7 +751,7 @@ html.ct-operacao-bloqueada body {
       ctSetTexto_('ctGateTitle', config.titulo || 'CHECK-IN');
       ctSetTexto_('ctGateMessage', config.mensagem || '');
       ctSetTexto_('ctGateNote', config.nota || '');
-      ctPrepararDetalhes_(config.dados || {}, config.codigo || '');
+      ctPrepararDetalhes_(config.dados || {}, config.codigo || '', config.mostrarHorario === true);
 
       const btnCancel = document.getElementById('ctGateCancel');
       const btnConfirm = document.getElementById('ctGateConfirm');
@@ -880,6 +882,15 @@ html.ct-operacao-bloqueada body {
         icone = '!';
       }
 
+      const podeExibirHorario =
+        !!ctTexto_(dados.horario, '') &&
+        (
+          (dados.sucesso === true && dados.entradaRegistrada === true) ||
+          tituloNormalizado.indexOf('ENTRADA LIBERADA') >= 0 ||
+          tituloNormalizado.indexOf('JÁ UTILIZADO') >= 0 ||
+          tituloNormalizado.indexOf('JA UTILIZADO') >= 0
+        );
+
       ctExibirTela_({
         estado: estado,
         icone: icone,
@@ -889,6 +900,7 @@ html.ct-operacao-bloqueada body {
         nota: nota,
         dados: dados,
         codigo: codigo,
+        mostrarHorario: podeExibirHorario,
         proximo: true
       });
 
