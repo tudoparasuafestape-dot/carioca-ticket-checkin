@@ -630,7 +630,7 @@ html.ct-operacao-bloqueada body {
     </section>
 
     <footer>
-      CARIOCA TICKET · CHECK-IN MULTIEVENTO v2.1.6
+      CARIOCA TICKET · CHECK-IN MULTIEVENTO v2.1.7
     </footer>
   </main>
 
@@ -652,7 +652,7 @@ html.ct-operacao-bloqueada body {
 
     const parametrosUrl = new URLSearchParams(window.location.search);
     const eventoId = String(parametrosUrl.get('evento') || '').trim();
-    const eventoNome = String(parametrosUrl.get('eventoNome') || 'Evento selecionado').trim();
+    const eventoNome = String(parametrosUrl.get('eventoNome') || (eventoId ? 'Evento selecionado' : 'Nenhum evento selecionado')).trim();
 
     if (eventoNomeEl) {
       eventoNomeEl.textContent = eventoNome;
