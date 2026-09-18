@@ -630,7 +630,7 @@ html.ct-operacao-bloqueada body {
     </section>
 
     <footer>
-      CARIOCA TICKET · CHECK-IN MULTIEVENTO v2.1.5
+      CARIOCA TICKET · CHECK-IN MULTIEVENTO v2.1.6
     </footer>
   </main>
 
@@ -680,7 +680,21 @@ html.ct-operacao-bloqueada body {
       if (dados && dados.nome) detalhes.push('<b>Nome:</b> ' + escapar(dados.nome));
       if (dados && dados.tipoIngresso) detalhes.push('<b>Ingresso:</b> ' + escapar(dados.tipoIngresso));
       if (dados && dados.codigo) detalhes.push('<b>Código:</b> ' + escapar(dados.codigo));
-      if (dados && dados.horario) detalhes.push('<b>Horário:</b> ' + escapar(dados.horario));
+
+      // CT_CHECKIN_HORARIO_CONTEXTUAL_HARDENING_V2_1_6
+      const tituloNormalizadoLegacy = String(titulo || '').trim().toUpperCase();
+      const podeExibirHorarioLegacy =
+        !!(dados && dados.horario) &&
+        (
+          (dados.sucesso === true && dados.entradaRegistrada === true) ||
+          tituloNormalizadoLegacy.indexOf('ENTRADA LIBERADA') >= 0 ||
+          tituloNormalizadoLegacy.indexOf('JÁ UTILIZADO') >= 0 ||
+          tituloNormalizadoLegacy.indexOf('JA UTILIZADO') >= 0
+        );
+
+      if (podeExibirHorarioLegacy) {
+        detalhes.push('<b>Horário:</b> ' + escapar(dados.horario));
+      }
 
       resultado.className = 'resultado ' + classe + ' fixo';
       resultado.innerHTML =
