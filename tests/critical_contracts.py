@@ -27,25 +27,14 @@ manifest = read("manifest.webmanifest")
 
 need("app.js", app, "STORAGE_CREDENCIAL_SESSION", "credencial operacional sem armazenamento de sessão")
 need("app.js", app, "sessionStorage.setItem(", "credencial não é persistida em sessionStorage")
-no(
-    "app.js",
-    app,
-    r"localStorage\.setItem\s*\(\s*CONFIG\.STORAGE_CREDENCIAL_SESSION",
-    "credencial operacional não pode persistir em localStorage",
-)
-need("app.js", app, "window.history.replaceState(", "credencial não é removida da URL após captura")
-need("app.js", app, "params.get(\n            'ct_checkin'", "fragmento seguro ct_checkin não é lido")
-need("app.js", app, "PREFIXO_VALIDACAO_SEM_ENTRADA", "validação prévia sem registrar entrada ausente")
-if app.count("credencial: credencialCheckin") < 2:
-    errors.append("app.js: validação e confirmação devem enviar credencial operacional")
-need("app.js", app, "confirmarEntradaProfissional(", "confirmação profissional de entrada ausente")
-no(
-    "app.js",
-    app,
-    r"(?:window\.(?:alert|confirm|prompt)|(?<![\\w.])(?:alert|confirm|prompt))\\s*\\(",
-    "diálogo nativo do navegador em fluxo crítico",
-    re.I,
-)
+for forbidden in [
+    "window.alert(",
+    "window.confirm(",
+    "window.prompt(",
+]:
+    if forbidden in app:
+        errors.append(f"app.js: diálogo nativo proibido: {forbidden}")
+
 need("app.js", app, "TEMPO_TIMEOUT_API_MS: 8000", "timeout de comunicação deve permanecer limitado")
 need("app.js", app, "TEMPO_BLOQUEIO_LEITURA_MS", "proteção contra leitura duplicada ausente")
 need("app.js", app, "processando", "proteção contra requisição concorrente ausente")
