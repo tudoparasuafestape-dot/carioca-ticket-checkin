@@ -27,6 +27,14 @@ manifest = read("manifest.webmanifest")
 
 need("app.js", app, "STORAGE_CREDENCIAL_SESSION", "credencial operacional sem armazenamento de sessão")
 need("app.js", app, "sessionStorage.setItem(", "credencial não é persistida em sessionStorage")
+if "localStorage.setItem(\n        CONFIG.STORAGE_CREDENCIAL_SESSION" in app:
+    errors.append("app.js: credencial operacional não pode persistir em localStorage")
+need("app.js", app, "window.history.replaceState(", "credencial não é removida da URL após captura")
+need("app.js", app, "params.get(\n            'ct_checkin'", "fragmento seguro ct_checkin não é lido")
+need("app.js", app, "PREFIXO_VALIDACAO_SEM_ENTRADA", "validação prévia sem registrar entrada ausente")
+if app.count("credencial: credencialCheckin") < 2:
+    errors.append("app.js: validação e confirmação devem enviar credencial operacional")
+need("app.js", app, "confirmarEntradaProfissional(", "confirmação profissional de entrada ausente")
 for forbidden in [
     "window.alert(",
     "window.confirm(",
