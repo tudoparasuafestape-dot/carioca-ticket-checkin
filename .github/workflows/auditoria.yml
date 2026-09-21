@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - fix/**
+      - qa/**
   pull_request:
     branches:
       - main
@@ -34,6 +35,9 @@ jobs:
               json.loads(Path(p).read_text(encoding='utf-8'))
           print('MANIFESTS_OK')
           PY
+
+      - name: Auditar matriz crítica do Check-in
+        run: python3 tests/critical_contracts.py
 
       - name: Auditar segurança e PWA
         run: |
