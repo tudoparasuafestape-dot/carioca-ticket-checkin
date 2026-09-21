@@ -52,7 +52,7 @@ jobs:
               'icone_192_existe': Path('carioca-ticket-icon-192.png').exists(),
               'icone_512_existe': Path('carioca-ticket-icon-512.png').exists(),
               'icone_maskable_existe': Path('carioca-ticket-icon-maskable-512.png').exists(),
-              'manifest_sem_icon_fantasma': 'icon-192.png' not in manifest and 'icon-512.png' not in manifest,
+              'manifest_sem_icon_fantasma': '"src": "icon-192.png"' not in manifest and '"src": "icon-512.png"' not in manifest,
               'cache_v5': "carioca-ticket-v5" in sw,
           }
 
