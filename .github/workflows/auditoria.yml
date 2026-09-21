@@ -1,0 +1,64 @@
+name: Carioca Ticket Check-in - Auditoria
+
+on:
+  push:
+    branches:
+      - main
+      - fix/**
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  validar-checkin:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validar JavaScript
+        run: |
+          node --check app.js
+          node --check painel.js
+          node --check sw.js
+
+      - name: Validar manifests
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          for p in ['manifest.webmanifest','manifest-painel.json']:
+              json.loads(Path(p).read_text(encoding='utf-8'))
+          print('MANIFESTS_OK')
+          PY
+
+      - name: Auditar segurança e PWA
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          app = Path('app.js').read_text(encoding='utf-8')
+          sw = Path('sw.js').read_text(encoding='utf-8')
+          manifest = Path('manifest.webmanifest').read_text(encoding='utf-8')
+
+          checks = {
+              'sem_confirm_nativo': 'window.confirm(' not in app,
+              'credencial_operacional': 'credencial: credencialCheckin' in app,
+              'captura_fragmento_seguro': "params.get(\n            'ct_checkin'" in app,
+              'endpoint_oficial': 'AKfycbz28keO65PIIElB8dWMBt8nnEBw9CzBxWnc6nOhAKKGNDkMZnYbWjrhTtr_v-lEI2IAJA' in app,
+              'timeout_limitado': 'TEMPO_TIMEOUT_API_MS: 8000' in app,
+              'icone_192_existe': Path('carioca-ticket-icon-192.png').exists(),
+              'icone_512_existe': Path('carioca-ticket-icon-512.png').exists(),
+              'icone_maskable_existe': Path('carioca-ticket-icon-maskable-512.png').exists(),
+              'manifest_sem_icon_fantasma': '"src": "icon-192.png"' not in manifest and '"src": "icon-512.png"' not in manifest,
+              'cache_v5': "carioca-ticket-v5" in sw,
+          }
+
+          falhas = [k for k,v in checks.items() if not v]
+          print(checks)
+          if falhas:
+              raise SystemExit('Falhas: ' + ' | '.join(falhas))
+          print('CHECKIN_AUDITORIA_OK')
+          PY

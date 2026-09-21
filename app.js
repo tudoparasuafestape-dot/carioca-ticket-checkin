@@ -1,11 +1,14 @@
 const CONFIG = {
   STORAGE_API_URL: 'carioca_ticket_api_url',
-  VERSAO: '1.2.0',
+  STORAGE_CREDENCIAL_SESSION: 'ct_checkin_operacional_credencial_v1',
+  API_URL_OFICIAL: 'https://script.google.com/macros/s/AKfycbz28keO65PIIElB8dWMBt8nnEBw9CzBxWnc6nOhAKKGNDkMZnYbWjrhTtr_v-lEI2IAJA/exec',
+  VERSAO: '2.2.0',
   PREFIXO_VALIDACAO_SEM_ENTRADA: 'CT_VALIDAR_SEM_ENTRADA:',
   TEMPO_BLOQUEIO_LEITURA_MS: 2600,
   TEMPO_TELA_SUCESSO_MS: 4000,
   TEMPO_TELA_AVISO_MS: 5000,
-  TEMPO_TELA_ERRO_MS: 5000
+  TEMPO_TELA_ERRO_MS: 5000,
+  TEMPO_TIMEOUT_API_MS: 8000
 };
 
 let leitorQr = null;
@@ -16,6 +19,7 @@ let ultimoCodigoEm = 0;
 let temporizadorTela = null;
 let temporizadorContagem = null;
 let eventoInstalacao = null;
+let credencialCheckin = '';
 
 const el = function(id) {
   return document.getElementById(id);
@@ -26,9 +30,12 @@ document.addEventListener(
   'DOMContentLoaded',
   function() {
     criarTelaResultadoProfissional();
+    criarConfirmacaoEntradaProfissional();
+    credencialCheckin = obterCredencialCheckin();
     registrarEventos();
     atualizarEstadoConfiguracao();
     registrarServiceWorker();
+    validarContextoOperacionalInicial();
   }
 );
 
@@ -170,11 +177,140 @@ function criarTelaResultadoProfissional() {
 
 
 function obterApiUrl() {
-  return String(
-    localStorage.getItem(
-      CONFIG.STORAGE_API_URL
-    ) || ''
-  ).trim();
+  /*
+   * O operador não deve configurar endpoint técnico.
+   * O deployment de produção é controlado pela Carioca Ticket.
+   */
+  const oficial =
+    String(
+      CONFIG.API_URL_OFICIAL || ''
+    ).trim();
+
+  try {
+    if (
+      localStorage.getItem(
+        CONFIG.STORAGE_API_URL
+      ) !== oficial
+    ) {
+      localStorage.setItem(
+        CONFIG.STORAGE_API_URL,
+        oficial
+      );
+    }
+  } catch (_) {}
+
+  return oficial;
+}
+
+
+function obterCredencialCheckin() {
+  let recebida = '';
+
+  try {
+    const hash =
+      String(
+        window.location.hash || ''
+      )
+        .replace(/^#/, '');
+
+    if (hash) {
+      const params =
+        new URLSearchParams(
+          hash
+        );
+
+      recebida =
+        String(
+          params.get(
+            'ct_checkin'
+          ) || ''
+        ).trim();
+    }
+  } catch (_) {}
+
+  if (
+    recebida &&
+    /^[A-Za-z0-9_-]{32,180}$/.test(
+      recebida
+    )
+  ) {
+    try {
+      sessionStorage.setItem(
+        CONFIG.STORAGE_CREDENCIAL_SESSION,
+        recebida
+      );
+    } catch (_) {}
+
+    /*
+     * Remove a credencial da barra de endereço depois de capturá-la.
+     * Ela permanece somente na sessão desta aba/PWA.
+     */
+    try {
+      if (
+        window.history &&
+        typeof window.history.replaceState ===
+          'function'
+      ) {
+        window.history.replaceState(
+          null,
+          document.title,
+          window.location.pathname +
+          window.location.search
+        );
+      }
+    } catch (_) {}
+
+    return recebida;
+  }
+
+  try {
+    return String(
+      sessionStorage.getItem(
+        CONFIG.STORAGE_CREDENCIAL_SESSION
+      ) || ''
+    ).trim();
+  } catch (_) {
+    return '';
+  }
+}
+
+
+function validarContextoOperacionalInicial() {
+  const eventoId =
+    obterEventoIdContextoCheckin();
+
+  const autorizado =
+    !!(
+      eventoId &&
+      credencialCheckin &&
+      /^[A-Za-z0-9_-]{32,180}$/.test(
+        credencialCheckin
+      )
+    );
+
+  if (autorizado) {
+    return;
+  }
+
+  [
+    'btnIniciar',
+    'btnValidar'
+  ].forEach(
+    function(id) {
+      const botao = el(id);
+      if (botao) {
+        botao.disabled = true;
+      }
+    }
+  );
+
+  mostrarTelaResultado({
+    tipo: 'erro',
+    titulo: 'Acesso restrito',
+    mensagem:
+      'Abra o Check-in pela Central Mobile da Carioca Ticket para iniciar uma operação autorizada.',
+    codigo: ''
+  });
 }
 
 
@@ -196,8 +332,7 @@ function atualizarEstadoConfiguracao() {
   const url = obterApiUrl();
 
   const configurado =
-    url.startsWith('https://') &&
-    url.includes('/exec');
+    url === CONFIG.API_URL_OFICIAL;
 
   el('avisoConfig')
     .classList
@@ -208,8 +343,8 @@ function atualizarEstadoConfiguracao() {
 
   el('statusConexao').textContent =
     configurado
-      ? 'Configurado'
-      : 'Desconectado';
+      ? 'Conectado'
+      : 'Indisponível';
 
   el('statusConexao').className =
     configurado
@@ -234,27 +369,22 @@ function abrirConfiguracao() {
 
 
 function salvarConfiguracao() {
-  const url = String(
-    el('apiUrl').value || ''
-  ).trim();
+  /*
+   * Mantido apenas por compatibilidade visual do PWA.
+   * O endpoint de produção não é editável pelo operador.
+   */
+  try {
+    localStorage.setItem(
+      CONFIG.STORAGE_API_URL,
+      CONFIG.API_URL_OFICIAL
+    );
+  } catch (_) {}
 
-  if (
-    !url.startsWith('https://') ||
-    !url.includes('/exec')
-  ) {
-    el('mensagemConfig').textContent =
-      '❌ Cole uma URL válida do Apps Script terminada em /exec.';
-
-    return;
-  }
-
-  localStorage.setItem(
-    CONFIG.STORAGE_API_URL,
-    url
-  );
+  el('apiUrl').value =
+    CONFIG.API_URL_OFICIAL;
 
   el('mensagemConfig').textContent =
-    '✅ Configuração salva neste aparelho.';
+    '✅ Conexão oficial da Carioca Ticket configurada automaticamente.';
 
   atualizarEstadoConfiguracao();
 
@@ -585,6 +715,20 @@ async function validarIngresso(
   const eventoId =
     obterEventoIdContextoCheckin();
 
+  if (
+    !credencialCheckin
+  ) {
+    mostrarTelaResultado({
+      tipo: 'erro',
+      titulo: 'Acesso expirado',
+      mensagem:
+        'Abra novamente o Check-in pela Central Mobile para renovar sua autorização.',
+      codigo: codigo
+    });
+
+    return;
+  }
+
   if (!eventoId) {
     mostrarTelaResultado({
       tipo: 'erro',
@@ -623,7 +767,8 @@ async function validarIngresso(
           codigo:
             CONFIG.PREFIXO_VALIDACAO_SEM_ENTRADA +
             codigo,
-          evento: eventoId
+          evento: eventoId,
+          credencial: credencialCheckin
         }
       );
 
@@ -633,12 +778,8 @@ async function validarIngresso(
       resposta.podeConfirmarEntrada === true
     ) {
       const confirmarEntrada =
-        window.confirm(
-          'INGRESSO VALIDO\n\n' +
-          (resposta.nome ? 'Participante: ' + resposta.nome + '\n' : '') +
-          (resposta.tipoIngresso ? 'Ingresso: ' + resposta.tipoIngresso + '\n' : '') +
-          '\nA entrada AINDA NAO foi registrada.\n\n' +
-          'Deseja CONFIRMAR A ENTRADA agora?'
+        await confirmarEntradaProfissional(
+          resposta
         );
 
       if (confirmarEntrada === true) {
@@ -648,10 +789,36 @@ async function validarIngresso(
             {
               action: 'checkin',
               codigo: codigo,
-              evento: eventoId
+              evento: eventoId,
+              credencial: credencialCheckin
             }
           );
+      } else {
+        resposta = {
+          sucesso: true,
+          tipo: 'aviso',
+          titulo: 'ENTRADA NÃO REGISTRADA',
+          mensagem:
+            'O ingresso é válido, mas a entrada não foi confirmada.',
+          codigo: codigo,
+          nome: resposta.nome || '',
+          tipoIngresso:
+            resposta.tipoIngresso || ''
+        };
       }
+    }
+
+    if (
+      resposta &&
+      resposta.acessoExpirado === true
+    ) {
+      try {
+        sessionStorage.removeItem(
+          CONFIG.STORAGE_CREDENCIAL_SESSION
+        );
+      } catch (_) {}
+
+      credencialCheckin = '';
     }
 
     const tipo =
@@ -778,6 +945,207 @@ async function validarIngresso(
       CONFIG.TEMPO_BLOQUEIO_LEITURA_MS
     );
   }
+}
+
+
+function criarConfirmacaoEntradaProfissional() {
+  if (
+    document.getElementById(
+      'ctConfirmacaoEntrada'
+    )
+  ) {
+    return;
+  }
+
+  const style =
+    document.createElement(
+      'style'
+    );
+
+  style.textContent =
+    '.ct-confirmacao{position:fixed;inset:0;z-index:99999;display:none;align-items:flex-end;justify-content:center;padding:18px;background:rgba(0,0,0,.78);backdrop-filter:blur(8px)}' +
+    '.ct-confirmacao.ativa{display:flex}' +
+    '.ct-confirmacao-card{width:min(560px,100%);background:#11161d;border:1px solid rgba(232,179,75,.28);border-radius:24px;padding:22px;box-shadow:0 24px 90px rgba(0,0,0,.62);color:#fff}' +
+    '.ct-confirmacao-marca{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#e8b34b;font-weight:900}' +
+    '.ct-confirmacao h2{margin:8px 0 8px;font-size:24px;line-height:1.1}' +
+    '.ct-confirmacao p{margin:0;color:#b7bec8;line-height:1.5}' +
+    '.ct-confirmacao-dados{margin:18px 0;padding:14px;border-radius:15px;background:#0b0f14;border:1px solid rgba(255,255,255,.08)}' +
+    '.ct-confirmacao-dados div+div{margin-top:7px}' +
+    '.ct-confirmacao-dados strong{color:#fff}' +
+    '.ct-confirmacao-acoes{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}' +
+    '.ct-confirmacao button{min-height:50px;border-radius:14px;font:inherit;font-weight:900;cursor:pointer}' +
+    '.ct-confirmacao-cancelar{border:1px solid rgba(255,255,255,.14);background:#171d25;color:#fff}' +
+    '.ct-confirmacao-confirmar{border:1px solid #e8b34b;background:linear-gradient(135deg,#d89a20,#f0c95a);color:#121212}';
+
+  document.head.appendChild(
+    style
+  );
+
+  const modal =
+    document.createElement(
+      'section'
+    );
+
+  modal.id =
+    'ctConfirmacaoEntrada';
+
+  modal.className =
+    'ct-confirmacao';
+
+  modal.setAttribute(
+    'role',
+    'dialog'
+  );
+
+  modal.setAttribute(
+    'aria-modal',
+    'true'
+  );
+
+  modal.innerHTML =
+    '<div class="ct-confirmacao-card">' +
+      '<div class="ct-confirmacao-marca">Carioca Ticket · Portaria</div>' +
+      '<h2>Confirmar entrada?</h2>' +
+      '<p>O ingresso é válido. A entrada ainda não foi registrada.</p>' +
+      '<div id="ctConfirmacaoDados" class="ct-confirmacao-dados"></div>' +
+      '<div class="ct-confirmacao-acoes">' +
+        '<button id="ctConfirmacaoCancelar" class="ct-confirmacao-cancelar" type="button">Cancelar</button>' +
+        '<button id="ctConfirmacaoConfirmar" class="ct-confirmacao-confirmar" type="button">Confirmar entrada</button>' +
+      '</div>' +
+    '</div>';
+
+  document.body.appendChild(
+    modal
+  );
+}
+
+
+function confirmarEntradaProfissional(
+  resposta
+) {
+  criarConfirmacaoEntradaProfissional();
+
+  return new Promise(
+    function(resolve) {
+      const modal =
+        document.getElementById(
+          'ctConfirmacaoEntrada'
+        );
+
+      const dados =
+        document.getElementById(
+          'ctConfirmacaoDados'
+        );
+
+      const cancelar =
+        document.getElementById(
+          'ctConfirmacaoCancelar'
+        );
+
+      const confirmar =
+        document.getElementById(
+          'ctConfirmacaoConfirmar'
+        );
+
+      const linhas = [];
+
+      if (
+        resposta &&
+        resposta.nome
+      ) {
+        linhas.push(
+          '<div><strong>Participante:</strong> ' +
+          escaparHtml(
+            resposta.nome
+          ) +
+          '</div>'
+        );
+      }
+
+      if (
+        resposta &&
+        resposta.tipoIngresso
+      ) {
+        linhas.push(
+          '<div><strong>Ingresso:</strong> ' +
+          escaparHtml(
+            resposta.tipoIngresso
+          ) +
+          '</div>'
+        );
+      }
+
+      if (
+        resposta &&
+        resposta.codigo
+      ) {
+        linhas.push(
+          '<div><strong>Código:</strong> ' +
+          escaparHtml(
+            resposta.codigo
+          ) +
+          '</div>'
+        );
+      }
+
+      dados.innerHTML =
+        linhas.join('');
+
+      function concluir(
+        valor
+      ) {
+        modal.classList.remove(
+          'ativa'
+        );
+
+        cancelar.onclick = null;
+        confirmar.onclick = null;
+
+        resolve(
+          valor
+        );
+      }
+
+      cancelar.onclick =
+        function() {
+          concluir(
+            false
+          );
+        };
+
+      confirmar.onclick =
+        function() {
+          confirmar.disabled =
+            true;
+
+          confirmar.textContent =
+            'Confirmando...';
+
+          modal.classList.remove(
+            'ativa'
+          );
+
+          confirmar.disabled =
+            false;
+
+          confirmar.textContent =
+            'Confirmar entrada';
+
+          cancelar.onclick = null;
+          confirmar.onclick = null;
+
+          resolve(
+            true
+          );
+        };
+
+      modal.classList.add(
+        'ativa'
+      );
+
+      confirmar.focus();
+    }
+  );
 }
 
 
@@ -1053,7 +1421,7 @@ function chamarApiJsonp(
               'Tempo esgotado na conexão.'
             );
           },
-          15000
+          CONFIG.TEMPO_TIMEOUT_API_MS
         );
 
       function limpar() {
