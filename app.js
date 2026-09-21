@@ -2,7 +2,7 @@ const CONFIG = {
   STORAGE_API_URL: 'carioca_ticket_api_url',
   STORAGE_CREDENCIAL_SESSION: 'ct_checkin_operacional_credencial_v1',
   API_URL_OFICIAL: 'https://script.google.com/macros/s/AKfycbz28keO65PIIElB8dWMBt8nnEBw9CzBxWnc6nOhAKKGNDkMZnYbWjrhTtr_v-lEI2IAJA/exec',
-  VERSAO: '2.2.0',
+  VERSAO: '2.3.0',
   PREFIXO_VALIDACAO_SEM_ENTRADA: 'CT_VALIDAR_SEM_ENTRADA:',
   TEMPO_BLOQUEIO_LEITURA_MS: 2600,
   TEMPO_TELA_SUCESSO_MS: 4000,
@@ -33,6 +33,7 @@ document.addEventListener(
     criarConfirmacaoEntradaProfissional();
     credencialCheckin = obterCredencialCheckin();
     registrarEventos();
+    ocultarConfiguracaoTecnica();
     atualizarEstadoConfiguracao();
     registrarServiceWorker();
     validarContextoOperacionalInicial();
@@ -328,6 +329,37 @@ function obterEventoIdContextoCheckin() {
 }
 
 
+function ocultarConfiguracaoTecnica() {
+  /*
+   * O endpoint é infraestrutura da Carioca Ticket e não é uma
+   * configuração do operador de portaria.
+   */
+  const botao =
+    el('btnConfig');
+
+  if (botao) {
+    botao.classList.add(
+      'oculto'
+    );
+
+    botao.setAttribute(
+      'aria-hidden',
+      'true'
+    );
+
+    botao.tabIndex = -1;
+  }
+
+  const campo =
+    el('apiUrl');
+
+  if (campo) {
+    campo.readOnly = true;
+    campo.tabIndex = -1;
+  }
+}
+
+
 function atualizarEstadoConfiguracao() {
   const url = obterApiUrl();
 
@@ -398,16 +430,12 @@ function salvarConfiguracao() {
 
 
 async function testarConexao() {
-  const url = String(
-    el('apiUrl').value || ''
-  ).trim();
+  const url =
+    obterApiUrl();
 
-  if (
-    !url.startsWith('https://') ||
-    !url.includes('/exec')
-  ) {
+  if (!url) {
     el('mensagemConfig').textContent =
-      '❌ Informe primeiro a URL /exec.';
+      '❌ Conexão oficial indisponível.';
 
     return;
   }
