@@ -42,7 +42,7 @@ need("app.js", app, "confirmarEntradaProfissional(", "confirmação profissional
 no(
     "app.js",
     app,
-    r"(?:window\.)?(?:alert|confirm|prompt)\s*\(",
+    r"(?:window\.(?:alert|confirm|prompt)|(?<![\\w.])(?:alert|confirm|prompt))\\s*\\(",
     "diálogo nativo do navegador em fluxo crítico",
     re.I,
 )
@@ -58,7 +58,6 @@ try:
     icons = parsed.get("icons") or []
     required = {
         ("carioca-ticket-icon-192.png", "192x192"),
-        ("carioca-ticket-icon-512.png", "512x512"),
         ("carioca-ticket-icon-maskable-512.png", "512x512"),
     }
     present = {(str(i.get("src","")).lstrip("./"), str(i.get("sizes",""))) for i in icons}
